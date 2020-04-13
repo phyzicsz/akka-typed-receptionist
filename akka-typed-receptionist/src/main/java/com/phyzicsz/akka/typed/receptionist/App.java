@@ -16,6 +16,9 @@
 
 package com.phyzicsz.akka.typed.receptionist;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
 /**
  * Application main.
  *
@@ -28,7 +31,7 @@ public class App {
      *
      * @param args Command-line args
      */
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
         new AppFactory()
                 .init()
                 .startActors()

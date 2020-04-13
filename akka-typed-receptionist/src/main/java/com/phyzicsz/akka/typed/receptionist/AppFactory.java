@@ -21,6 +21,10 @@ import com.phyzicsz.akka.typed.receptionist.behaviors.y.EventC;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +79,10 @@ public class AppFactory {
             ServiceManager.yrouter().get().tell(new EventC());
         }
         
-        
+       
+        Thread.sleep(1000);
+        actorSystem.terminate();
+       
         return this;
     }
 }

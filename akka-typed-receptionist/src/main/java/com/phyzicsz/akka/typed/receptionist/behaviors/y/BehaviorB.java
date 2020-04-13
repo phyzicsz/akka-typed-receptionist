@@ -15,6 +15,7 @@
  */
 package com.phyzicsz.akka.typed.receptionist.behaviors.y;
 
+import com.phyzicsz.akka.typed.receptionist.behaviors.x.*;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
@@ -45,17 +46,17 @@ public class BehaviorB {
 
     public Behavior<EventY> behavior() {
         return Behaviors.receive(EventY.class)
-                .onMessage(EventC.class, this::onEventC)
-                .onMessage(EventD.class, this::onEventD)
+                .onMessage(EventC.class, this::onEventA)
+                .onMessage(EventD.class, this::onEventB)
                 .build();
     }
 
-    private Behavior<EventY> onEventC(EventC event) {
-        context.getLog().info("onEventC!");
+    private Behavior<EventY> onEventA(EventC event) {
+        context.getLog().info("onEventA!");
         return Behaviors.same();
     }
     
-     private Behavior<EventY> onEventD(EventD eventD) {
+     private Behavior<EventY> onEventB(EventD event) {
         context.getLog().info("onEventB!");
         return Behaviors.same();
     }
