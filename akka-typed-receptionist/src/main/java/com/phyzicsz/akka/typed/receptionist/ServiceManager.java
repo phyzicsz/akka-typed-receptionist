@@ -19,35 +19,43 @@ import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
+import akka.actor.typed.javadsl.GroupRouter;
+import akka.actor.typed.javadsl.Routers;
 import akka.actor.typed.receptionist.Receptionist;
 import akka.actor.typed.receptionist.ServiceKey;
-import com.google.common.collect.MultimapBuilder;
-import com.google.common.collect.SetMultimap;
 
 import com.phyzicsz.akka.typed.receptionist.behaviors.x.BehaviorA;
 import com.phyzicsz.akka.typed.receptionist.behaviors.x.EventX;
 import com.phyzicsz.akka.typed.receptionist.behaviors.y.BehaviorB;
 import com.phyzicsz.akka.typed.receptionist.behaviors.y.EventY;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  *
  * @author phyzicsz <phyzics.z@gmail.com>
  */
 public class ServiceManager {
- 
+
     public static final ServiceKey<EventX> eventXServiceKey = ServiceKey.create(EventX.class, "eventXServiceKey");
     public static final ServiceKey<EventY> eventYServiceKey = ServiceKey.create(EventY.class, "eventYServiceKey");
-    
+
+    private static final AtomicReference<ActorRef<EventX>> xrouter = new AtomicReference<>();
+    private static final AtomicReference<ActorRef<EventY>> yrouter = new AtomicReference<>();
+
     private final ActorContext<Receptionist.Listing> context;
-    private final SetMultimap<ServiceKey, ActorRef> services;
 
     private ServiceManager(ActorContext<Receptionist.Listing> context) {
         this.context = context;
-        services = MultimapBuilder.hashKeys().hashSetValues().build();
     }
-    
-   
+
+    public static AtomicReference<ActorRef<EventX>> xrouter() {
+        return xrouter;
+    }
+
+    public static AtomicReference<ActorRef<EventY>> yrouter() {
+        return yrouter;
+    }
 
     public static Behavior<Void> create() {
         return Behaviors.setup(
@@ -57,10 +65,16 @@ public class ServiceManager {
                     //create behaviors for EventX processing
                     receptionist.tell(Receptionist.subscribe(eventXServiceKey, context.getSelf().narrow()));
                     context.spawnAnonymous(BehaviorA.create());
+                    context.spawnAnonymous(BehaviorA.create());
+                    GroupRouter<EventX> xgroup = Routers.group(eventXServiceKey);
+                    xrouter.set(context.spawn(xgroup, "event-x-processors"));
 
                     //create behaviors for EventY processing
                     receptionist.tell(Receptionist.subscribe(eventYServiceKey, context.getSelf().narrow()));
                     context.spawnAnonymous(BehaviorB.create());
+                    context.spawnAnonymous(BehaviorB.create());
+                    GroupRouter<EventY> ygroup = Routers.group(eventYServiceKey);
+                    yrouter.set(context.spawn(ygroup, "event-y-processors"));
 
                     return new ServiceManager(context).behavior();
                 })
@@ -70,20 +84,20 @@ public class ServiceManager {
 
     private Behavior<Receptionist.Listing> behavior() {
         return Behaviors.receive(Receptionist.Listing.class)
-                .onMessage(Receptionist.Listing.class, this::onListing)   
+                .onMessage(Receptionist.Listing.class, this::onListing)
                 .build();
     }
 
     private Behavior<Receptionist.Listing> onListing(Receptionist.Listing listing) {
         context.getLog().info("onListing");
         ServiceKey key = listing.getKey();
-        Set<ActorRef<EventX>> xrefs = listing.getServiceInstances(key);
-        xrefs.forEach((ref) -> {
-            context.getLog().info("adding service: {}:{}",key.id(),ref.path().toString());
-            services.put(key, ref);
+        Set<ActorRef<?>> refs = listing.getServiceInstances(key);
+        refs.forEach((ref) -> {
+            context.getLog().info("adding service: {}:{}", key.id(), ref.path().toString());
+
         });
 
         return Behaviors.same();
     }
-   
+
 }

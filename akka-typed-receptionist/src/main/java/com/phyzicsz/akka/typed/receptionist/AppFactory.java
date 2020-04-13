@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.phyzicsz.akka.typed.receptionist;
 
-
-import akka.actor.typed.ActorRef;
 import akka.actor.typed.ActorSystem;
 import com.phyzicsz.akka.typed.receptionist.behaviors.x.EventA;
-
+import com.phyzicsz.akka.typed.receptionist.behaviors.y.EventC;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -31,10 +28,11 @@ import org.slf4j.LoggerFactory;
  * @author phyzicsz <phyzics.z@gmail.com>
  */
 public class AppFactory {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(AppFactory.class);
     private Config config;
     private ActorSystem<Void> actorSystem;
-
+    
     public AppFactory init() {
         LOGGER.info("Initializing App Services");
         String confFile = System.getProperty("application.conf");
@@ -45,7 +43,7 @@ public class AppFactory {
             LOGGER.debug("Using default configuration file");
             config = ConfigFactory.load();
         }
-
+        
         return this;
     }
 
@@ -57,17 +55,27 @@ public class AppFactory {
     public AppFactory startActors() {
         LOGGER.info("Starting Actors.");
         try {
-            actorSystem =  ActorSystem.create(GuardianBehavior.create(),"mainBehavior",config);
+            actorSystem = ActorSystem.create(GuardianBehavior.create(), "mainBehavior", config);
+            
         } catch (NullPointerException ex) {
             LOGGER.error("Actor Failed to start: {}", ex);
         }
         return this;
     }
     
-     public AppFactory sendData() {
+    public AppFactory sendData() throws InterruptedException {
         LOGGER.info("send data");
-        ActorRef service = GuardianBehavior.getServiceManager();
-        service.tell(new EventA());
+        Thread.sleep(1000);
+        
+        for(int i = 0; i < 100; i++) {
+            ServiceManager.xrouter().get().tell(new EventA());
+        }
+        
+        for(int i = 0; i < 100; i++) {
+            ServiceManager.yrouter().get().tell(new EventC());
+        }
+        
+        
         return this;
     }
 }

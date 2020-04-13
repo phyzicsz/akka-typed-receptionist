@@ -51,7 +51,7 @@ public class BehaviorB {
     }
 
     private Behavior<EventY> onEventC(EventC event) {
-        context.getLog().info("onEventA!");
+        context.getLog().info("onEventC!");
         return Behaviors.same();
     }
     

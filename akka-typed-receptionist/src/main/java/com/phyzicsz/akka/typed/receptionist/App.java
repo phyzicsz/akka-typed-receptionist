@@ -28,9 +28,10 @@ public class App {
      *
      * @param args Command-line args
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         new AppFactory()
                 .init()
-                .startActors();
+                .startActors()
+                .sendData();
     }
 }
